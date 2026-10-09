@@ -1,6 +1,6 @@
 # Project Progress & Verification
 
-## Status: Complete & Verified
+## Status: Pushed to GitHub & Verified
 
 ---
 
@@ -21,6 +21,11 @@
 3. **Workspace Organization**:
    * Only `.md` files in the root (`README.md`, `agent.md`, `progress.md`).
    * All code and configurations isolated inside `backend/` and `frontend/`.
+
+4. **Git & Remote Deployment**:
+   * Initialized Git repository with strict `.gitignore` rules.
+   * Secrets (`.env`) and dependencies (`node_modules/`, `dist/`) completely excluded from version control.
+   * Successfully pushed `main` branch to [https://github.com/adityaarora-dev/Community_Helper](https://github.com/adityaarora-dev/Community_Helper).
 
 ---
 
