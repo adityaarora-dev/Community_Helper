@@ -1,59 +1,48 @@
-# Supabase + Express + React Fullstack
+# Intelligent Community Resource Chatbot
 
-A clean fullstack project connecting Express to Supabase PostgreSQL (IPv4 Session Pooler) with a React dashboard.
+Express + Supabase PostgreSQL (IPv4 Session Pooler) + React dashboard for deterministic welfare scheme matching.
 
 ## Structure
 ```
 DB_PROJECT/
-├── backend/    # Express server & Supabase pg pool
+├── backend/    # Express server, pg pool, and DB migration
 ├── frontend/   # React + Vite dashboard
 ├── README.md   # Quickstart guide
-├── agent.md    # Architecture & constraints
-└── progress.md # Tasks & verification log
+├── agent.md    # Architecture, SQL matching logic, & AI roadmap
+└── progress.md # Task execution log
 ```
 
 ---
 
 ## Quickstart
 
-### 1. Run Backend
+### 1. Initialize & Seed Database (Run Once)
+```bash
+cd backend
+npm run db:init
+```
+* Seeds 7 government schemes, 7 eligibility rules, and 5 service centers.
+
+### 2. Start Backend Server
 ```bash
 cd backend
 npm run dev
 ```
-* **Terminal output**:
-  ```text
-  🚀 Express server running on http://localhost:5000
-  ✅ [Database Connected] Successfully connected to Supabase PostgreSQL database 'postgres'
-  ```
+* **URL**: `http://localhost:5000` | **Health**: `http://localhost:5000/health`
 
-### 2. Run React Frontend
-In a new terminal:
+### 3. Start React Frontend
+In a separate terminal:
 ```bash
 cd frontend
 npm run dev
 ```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+* **URL**: `http://localhost:3000`
 
 ---
 
-## Verify Connection Messages
-
-* **In Browser / Frontend**: Visit `http://localhost:3000` or `http://localhost:5000/health`.
-* **On Router**: Returns HTTP 200:
-  ```json
-  { "status": "success", "message": "Database connection successful and healthy!" }
-  ```
-* **In Backend Terminal**: Logs on every request:
-  ```text
-  [HTTP] GET /health
-  ✅ [Health Check Success] Supabase PostgreSQL database 'postgres' ping successful (...)
-  ```
-
----
-
-## Teammate Setup
-1. Clone the repository.
-2. In `backend/`, copy `.env.example` to `.env`.
-3. Paste the provided `DATABASE_URL` (Port 5432).
-4. Run `npm install` in both `backend` and `frontend`.
+## Database Architecture
+* **`users`**: Demographic records.
+* **`govt_schemes`**: Welfare schemes & required documents.
+* **`eligibility_rules`**: Income, age, gender, occupation, family size, disability, and landholding rules.
+* **`service_centers`**: Facilitation centers by zone.
+* **`user_interactions`**: Chat logs & matched scheme IDs.
