@@ -1,0 +1,29 @@
+{
+  "name": "db_project-backend",
+  "version": "1.0.0",
+  "description": "Supabase PostgreSQL Backend Service with IPv4 Session Pooler",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test-db": "node -e \"require('./src/config/db').testConnection().then(() => process.exit(0)).catch(() => process.exit(1));\""
+  },
+  "keywords": [
+    "supabase",
+    "postgresql",
+    "express",
+    "pg-pool"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^18.0.6",
+    "express": "^5.2.1",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
