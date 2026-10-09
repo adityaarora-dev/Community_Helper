@@ -13,7 +13,8 @@
     "test:notifications": "node --test src/scripts/testZoneNotifications.js",
     "admin:setup": "node src/scripts/setupAdmin.js",
     "test:admin": "node --test src/scripts/testAdmin.js",
-    "test:text-to-sql": "node src/scripts/testTextToSqlChatbot.js"
+    "test:text-to-sql": "node src/scripts/testTextToSqlChatbot.js",
+    "test:audit": "node --test src/scripts/testSecurityAndAudit.js"
   },
   "keywords": [
     "supabase",

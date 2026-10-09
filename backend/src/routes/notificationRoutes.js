@@ -6,8 +6,9 @@ const router = express.Router();
 // Identity comes only from the signed token, never a client-supplied account ID.
 router.use((req, res, next) => {
   try {
+    if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET not configured');
     const token = /^Bearer (.+)$/.exec(req.headers.authorization || '')?.[1];
-    const claims = jwt.verify(token, process.env.JWT_SECRET || 'civic-community-helper-secret-key-2026');
+    const claims = jwt.verify(token, process.env.JWT_SECRET);
     if (!claims.userId) throw new Error('Missing account');
     req.userId = claims.userId;
     next();

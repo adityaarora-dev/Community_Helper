@@ -148,11 +148,11 @@ async function getSchemaContext(forceRefresh = false) {
 
   // Add critical domain notes to guide accurate joins and filtering
   schemaLines.push('### Schema Notes & Domain Guidance:');
-  schemaLines.push('1. "govt_schemes" holds government welfare schemes (scheme_id, scheme_name, description, category, total_benefit_value, required_documents, official_url).');
+  schemaLines.push('1. "govt_schemes" holds government welfare schemes (scheme_id, scheme_name, description, category, total_benefit_value, required_documents, official_url, location_zone).');
   schemaLines.push('2. "eligibility_rules" defines criteria per scheme (rule_id, scheme_id REFERENCES govt_schemes, max_income, min_age, max_age, target_gender, min_family_size, target_occupation, target_social_category, requires_disability, max_landholding). To inspect both scheme details and its eligibility rules, JOIN eligibility_rules r ON s.scheme_id = r.scheme_id.');
   schemaLines.push('3. "service_centers" contains offline help centers (center_id, name, address, location_zone, contact_phone, operating_hours).');
   schemaLines.push('4. "users" contains registered citizens (user_id, name, email, annual_income, family_size, location_zone, age, gender, occupation, social_category, disability_status, landholding_acres).');
-  schemaLines.push('5. "scheme_notifications" records notifications sent to citizens regarding new schemes (notification_id, user_id, scheme_id, title, message, is_read, created_at).');
+  schemaLines.push('5. "scheme_notifications" records notifications sent to citizens regarding new schemes (notification_id, user_id, scheme_id, location_zone, created_at, read_at).');
   schemaLines.push('6. Case-insensitive string matching: In PostgreSQL, use ILIKE instead of LIKE (e.g. category ILIKE \'%Healthcare%\').');
 
   cachedSchemaText = schemaLines.join('\n');

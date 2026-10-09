@@ -1,9 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/db');
-const { sendOtpEmail } = require('../services/emailService');
+const emailService = require('../services/emailService');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'civic-community-helper-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ [Security Alert] JWT_SECRET environment variable is missing.');
+}
 
 // In-memory store for pending OTP registrations (keyed by email)
 // Stored for 10 minutes
@@ -50,7 +53,7 @@ async function sendRegistrationOtp(req, res) {
     });
 
     // Deliver OTP via Brevo
-    await sendOtpEmail(cleanEmail, name.trim(), otp);
+    await emailService.sendOtpEmail(cleanEmail, name.trim(), otp);
 
     return res.status(200).json({
       status: 'success',

@@ -26,10 +26,29 @@ async function runTests() {
     const centersRes = await fetch(`${baseUrl}/api/service-centers?zone=North%20Zone`).then((r) => r.json());
     console.log(`   Centers Status: ${centersRes.status}, North Zone Centers: ${centersRes.count}`);
 
-    // 4. User Registration & Login
-    console.log('4️⃣ Testing User Authentication...');
+    // 4. User Registration & Login (OTP-based)
+    console.log('4️⃣ Testing User Authentication & Security Safeguards...');
     const testEmail = `test_citizen_${Date.now()}@example.com`;
-    const regRes = await fetch(`${baseUrl}/api/users/register`, {
+
+    // 4a. Verify legacy direct registration is strictly blocked (403 Forbidden)
+    const directBlockRes = await fetch(`${baseUrl}/api/users/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Direct Bypass', email: testEmail, password: 'Pass' }),
+    });
+    console.log(`   Direct /register bypass block status: ${directBlockRes.status} (Expected 403)`);
+    if (directBlockRes.status !== 403) throw new Error('Security failure: Direct registration bypass was not blocked!');
+
+    // 4b. Perform OTP registration
+    let capturedOtp = null;
+    const emailService = require('../services/emailService');
+    const originalSendOtp = emailService.sendOtpEmail;
+    emailService.sendOtpEmail = async (to, name, otp) => {
+      capturedOtp = otp;
+      return { success: true, method: 'mock_test', messageId: 'test-otp-id' };
+    };
+
+    const otpSendRes = await fetch(`${baseUrl}/api/users/send-registration-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -45,8 +64,16 @@ async function runTests() {
         },
       }),
     }).then((r) => r.json());
-    console.log(`   Registration Status: ${regRes.status}, User ID: ${regRes.user?.user_id}`);
+    console.log(`   OTP Dispatch Status: ${otpSendRes.status}, OTP Captured: ${Boolean(capturedOtp)}`);
+
+    const regRes = await fetch(`${baseUrl}/api/users/verify-otp-and-register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: testEmail, otp: capturedOtp }),
+    }).then((r) => r.json());
+    console.log(`   OTP Verification Status: ${regRes.status}, User ID: ${regRes.user?.user_id}`);
     const userId = regRes.user?.user_id;
+    emailService.sendOtpEmail = originalSendOtp; // Restore original
 
     // Login
     const loginRes = await fetch(`${baseUrl}/api/users/login`, {
@@ -55,19 +82,31 @@ async function runTests() {
       body: JSON.stringify({ email: testEmail, password: 'SecurePassword123!' }),
     }).then((r) => r.json());
     console.log(`   Login Status: ${loginRes.status}, Token received: ${Boolean(loginRes.token)}`);
+    const citizenToken = loginRes.token;
 
-    // Update Profile
-    console.log('5️⃣ Testing Demographic Profile Update...');
-    const updateRes = await fetch(`${baseUrl}/api/users/profile/${userId}`, {
+    // 5. Update Profile (Authorized)
+    console.log('5️⃣ Testing Demographic Profile Authorization & Update...');
+    // Verify unauthorized update (no token) is blocked
+    const unauthRes = await fetch(`${baseUrl}/api/users/profile/${userId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ annual_income: 80000 }),
+    });
+    console.log(`   Unauthenticated update blocked: ${unauthRes.status} (Expected 401)`);
+
+    const updateRes = await fetch(`${baseUrl}/api/users/profile/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${citizenToken}`,
+      },
       body: JSON.stringify({
         annual_income: 80000,
         occupation: 'Farmer',
         landholding_acres: 2.5,
       }),
     }).then((r) => r.json());
-    console.log(`   Update Status: ${updateRes.status}, New Income: ₹${updateRes.user?.annual_income}`);
+    console.log(`   Authorized Update Status: ${updateRes.status}, New Income: ₹${updateRes.user?.annual_income}`);
 
     // 6. Conversational Chat & Relational Matching
     console.log('6️⃣ Testing Conversational AI Assistant & Relational Matching...');
