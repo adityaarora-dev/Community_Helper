@@ -19,9 +19,9 @@ async function handleChat(req, res) {
       query: rawQuery,
       history = [],
       demographics: manualDemographics = {},
-      userId,
       language = 'English',
     } = req.body;
+    const userId = req.userId;
 
     // Reject empty payload
     if (!rawQuery && (!manualDemographics || Object.keys(manualDemographics).length === 0)) {

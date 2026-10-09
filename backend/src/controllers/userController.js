@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { issueSession } = require('../services/citizenSession');
 const { query } = require('../config/db');
 const emailService = require('../services/emailService');
 
@@ -156,7 +156,7 @@ async function verifyOtpAndRegister(req, res) {
     pendingRegistrations.delete(cleanEmail);
 
     // Issue JWT Token
-    const token = jwt.sign({ userId: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = await issueSession(user);
 
     console.log(`✅ [Citizen Created in DB] ${user.name} (${user.email}) verified and saved.`);
 
@@ -245,7 +245,7 @@ async function register(req, res) {
     const user = result.rows[0];
 
     // Generate JWT
-    const token = jwt.sign({ userId: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = await issueSession(user);
 
     return res.status(201).json({
       status: 'success',
@@ -303,7 +303,7 @@ async function login(req, res) {
 
     delete user.password_hash;
 
-    const token = jwt.sign({ userId: user.user_id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = await issueSession(user);
 
     return res.status(200).json({
       status: 'success',

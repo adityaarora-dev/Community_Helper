@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getSessionToken, clearSession } from './authSession';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -18,14 +19,25 @@ export async function markNotificationRead(id) {
   return (await client.patch(`/api/notifications/${id}/read`)).data;
 }
 
-// Attach JWT token to requests if present in localStorage
+// Attach only the current page's authenticated session.
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('civic_auth_token');
-  if (token) {
+  const token = getSessionToken();
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+client.interceptors.response.use((response) => response, (error) => {
+  if (error.response?.status === 401 && error.config?.headers?.Authorization === `Bearer ${getSessionToken()}`) {
+    clearSession(); window.dispatchEvent(new Event('civic-session-ended'));
+  }
+  return Promise.reject(error);
+});
+export async function logoutUser() {
+  const token = getSessionToken();
+  if (token) return client.post('/api/users/logout', {}, { headers: { Authorization: `Bearer ${token}` } });
+}
+export async function keepSessionActive() { return client.post('/api/users/session'); }
 
 /**
  * Health Check API

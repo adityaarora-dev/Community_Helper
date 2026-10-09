@@ -11,61 +11,33 @@ const {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Authentication and Authorization Middleware for Citizen Profile Operations
- * Derives identity strictly from cryptographically verified JWT.
- * Allows access if:
- * 1. Authenticated user matches req.params.userId, OR
- * 2. Authenticated user is an authorized administrator (claims.adminId or claims.role === 'admin')
- */
+const { query } = require('../config/db');
+const { requireCitizen } = require('../services/citizenSession');
 function requireAuth(req, res, next) {
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    return res.status(500).json({ status: 'error', message: 'JWT authentication is not configured on server.' });
-  }
-
-  try {
-    const authHeader = req.headers.authorization || '';
-    const match = /^Bearer (.+)$/i.exec(authHeader);
-    if (!match) {
-      return res.status(401).json({ status: 'error', message: 'Authentication required. Please sign in.' });
-    }
-
-    const token = match[1];
-    let claims;
-    try {
-      // First try standard user audience/algorithms, or admin audience if admin token
-      claims = jwt.verify(token, jwtSecret);
-    } catch (verifyErr) {
-      // Try with admin audience if standard verify failed due to audience
+  const target = req.params.userId;
+  if (!UUID_REGEX.test(target)) return res.status(400).json({ message: 'Invalid user ID.' });
+  const token = /^Bearer (.+)$/i.exec(req.headers.authorization || '')?.[1];
+  // Decode only to select the verifier; the selected verifier must authenticate it.
+  if (jwt.decode(token)?.aud === 'civichelper-admin') {
+    return (async () => {
+      let claims;
       try {
-        claims = jwt.verify(token, jwtSecret, { audience: 'civichelper-admin' });
-      } catch (adminVerifyErr) {
-        throw verifyErr;
-      }
-    }
-
-    const targetUserId = req.params.userId;
-    if (targetUserId && !UUID_REGEX.test(targetUserId)) {
-      return res.status(400).json({ status: 'error', message: 'Invalid user ID format.' });
-    }
-
-    const isAdmin = Boolean(claims.adminId || claims.role === 'admin');
-    const isOwner = Boolean(claims.userId && targetUserId && String(claims.userId) === String(targetUserId));
-
-    if (!isAdmin && !isOwner) {
-      return res.status(403).json({ status: 'error', message: 'Unauthorized access to this profile.' });
-    }
-
-    req.userId = claims.userId || targetUserId;
-    req.user = claims;
-    req.isAdmin = isAdmin;
-    next();
-  } catch (err) {
-    return res.status(401).json({ status: 'error', message: 'Invalid or expired session. Please sign in again.' });
+        claims = jwt.verify(token, process.env.JWT_SECRET, { audience: 'civichelper-admin', algorithms: ['HS256'] });
+        if (!UUID_REGEX.test(claims.adminId) || !UUID_REGEX.test(claims.sessionId)) throw new Error('Invalid session');
+      } catch { return res.status(401).json({ message: 'Please sign in again.' }); }
+      try {
+        const result = await query('SELECT session_id FROM admin_sessions WHERE admin_id = $1 AND session_id = $2 AND expires_at > NOW()', [claims.adminId, claims.sessionId]);
+        if (!result.rowCount) return res.status(401).json({ message: 'Admin session has ended.' });
+        req.userId = target; req.isAdmin = true; next();
+      } catch (error) { next(error); }
+    })();
   }
+  return requireCitizen(req, res, (error) => {
+    if (error) return next(error);
+    if (req.userId !== target) return res.status(403).json({ message: 'Unauthorized access to this profile.' });
+    next();
+  });
 }
-
 // -----------------------------------------------------------------------------
 // Active Secure Registration Flow (OTP Email Verification via Brevo)
 // -----------------------------------------------------------------------------
@@ -86,6 +58,13 @@ router.post('/register', (req, res) => {
 // Citizen Authentication & Profile Routes
 // -----------------------------------------------------------------------------
 router.post('/login', login);
+router.post('/session', requireCitizen, (req, res) => res.json({ status: 'success' }));
+router.post('/logout', requireCitizen, async (req, res, next) => {
+  try {
+    await query('DELETE FROM citizen_sessions WHERE session_id = $1 AND user_id = $2', [req.sessionId, req.userId]);
+    res.json({ status: 'success' });
+  } catch (error) { next(error); }
+});
 router.get('/profile/:userId', requireAuth, getProfile);
 router.put('/profile/:userId', requireAuth, updateProfile);
 

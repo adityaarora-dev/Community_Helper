@@ -4,6 +4,7 @@
 
 -- 1. CLEANUP PREVIOUS TABLES (Ordered for Foreign Key Dependencies)
 DROP TABLE IF EXISTS scheme_notifications;
+DROP TABLE IF EXISTS citizen_sessions;
 DROP TABLE IF EXISTS user_interactions;
 DROP TABLE IF EXISTS eligibility_rules;
 DROP TABLE IF EXISTS govt_schemes;

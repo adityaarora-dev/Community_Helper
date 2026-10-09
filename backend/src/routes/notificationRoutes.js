@@ -1,21 +1,9 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
+
 const { query } = require('../config/db');
 const router = express.Router();
 
-// Identity comes only from the signed token, never a client-supplied account ID.
-router.use((req, res, next) => {
-  try {
-    if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET not configured');
-    const token = /^Bearer (.+)$/.exec(req.headers.authorization || '')?.[1];
-    const claims = jwt.verify(token, process.env.JWT_SECRET);
-    if (!claims.userId) throw new Error('Missing account');
-    req.userId = claims.userId;
-    next();
-  } catch {
-    res.status(401).json({ message: 'Please sign in to see your notifications.' });
-  }
-});
+router.use(require('../services/citizenSession').requireCitizen);
 
 router.get('/', async (req, res, next) => {
   try {

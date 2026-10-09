@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowRight, ArrowLeft, Mail } from 'lucide-react';
 import { loginUser, sendRegistrationOtp, verifyOtpAndRegister } from '../services/api';
 import { useLanguage } from '../i18n';
+import { startSession } from '../services/authSession';
 import { ZONES } from './DemographicFields';
 
 export default function LoginView({ onAuthSuccess, onNavigateToHome, initialMode = 'login' }) {
@@ -20,7 +21,7 @@ export default function LoginView({ onAuthSuccess, onNavigateToHome, initialMode
       if (mode === 'register' && step === 1) { await sendRegistrationOtp({ name: form.name, email: form.email, password: form.password, demographics: { location_zone: form.location_zone } }); setStep(2); }
       else {
         const data = mode === 'login' ? await loginUser({ email: form.email, password: form.password }) : await verifyOtpAndRegister({ email: form.email, otp: form.otp });
-        localStorage.setItem('civic_auth_token', data.token); localStorage.setItem('civic_user', JSON.stringify(data.user)); onAuthSuccess(data.user, { isNewAccount: mode === 'register' });
+        startSession(data.token); onAuthSuccess(data.user, { isNewAccount: mode === 'register' });
       }
     } catch { setError(mode === 'login' ? 'loginError' : step === 2 ? 'otpError' : 'otpSendError'); }
     finally { setLoading(false); }

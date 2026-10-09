@@ -1,0 +1,76 @@
+{
+  "verified_on": "2026-10-10",
+  "notes": "Real public offices grouped into the application's five broad geographic zones, not official administrative jurisdictions. Visiting hours were not verified; call before visiting.",
+  "centers": [
+    {
+      "name": "District Social Welfare Office (North), Gulabi Bagh",
+      "address": "20-21, Shopping Complex, near Super Bazaar, Gulabi Bagh, New Delhi 110007, India",
+      "location_zone": "North Zone",
+      "contact_phone": "+91 9289550131",
+      "source": "https://socialwelfare.delhi.gov.in/social/contact-us"
+    },
+    {
+      "name": "District Social Welfare Office (North West), Azadpur",
+      "address": "DSW TCPC Building, Indra Nagar, Azadpur, Delhi 110033, India",
+      "location_zone": "North Zone",
+      "contact_phone": "+91 9289550132",
+      "source": "https://socialwelfare.delhi.gov.in/social/contact-us"
+    },
+    {
+      "name": "District Social Welfare Office (South), Lajpat Nagar",
+      "address": "Kasturba Niketan Complex, Lajpat Nagar II, New Delhi 110024, India",
+      "location_zone": "South Zone",
+      "contact_phone": "+91 9289550127",
+      "source": "https://socialwelfare.delhi.gov.in/social/contact-us"
+    },
+    {
+      "name": "SDM Office, Mehrauli",
+      "address": "Old Tehsil Building, Mehrauli, New Delhi 110030, India",
+      "location_zone": "South Zone",
+      "contact_phone": "+91 11 26641772",
+      "source": "https://revenue.delhi.gov.in/revenue/sub-division-offices"
+    },
+    {
+      "name": "District Social Welfare Office (East), Geeta Colony",
+      "address": "Silai Kadhai Kendra, Block 10, near Shamshan Ghat, Geeta Colony, Delhi 110031, India",
+      "location_zone": "East Zone",
+      "contact_phone": "+91 9289550129",
+      "source": "https://socialwelfare.delhi.gov.in/social/contact-us"
+    },
+    {
+      "name": "SDM Office, Gandhi Nagar",
+      "address": "Office of DC East, LM Bund Road, Shastri Nagar, Delhi 110031, India",
+      "location_zone": "East Zone",
+      "contact_phone": "+91 11 22058348",
+      "source": "https://revenue.delhi.gov.in/revenue/sub-division-offices"
+    },
+    {
+      "name": "District Social Welfare Office (West), Tilak Nagar",
+      "address": "Training-Cum-Production Center (TCPC), near Punjab and Sind Bank, Tilak Nagar, New Delhi 110018, India",
+      "location_zone": "West Zone",
+      "contact_phone": "+91 9289550134",
+      "source": "https://socialwelfare.delhi.gov.in/social/contact-us"
+    },
+    {
+      "name": "SDM Office, Janakpuri",
+      "address": "Plot 37 and 38, Institutional Area, Pankha Road, D Block, Janakpuri, New Delhi 110058, India",
+      "location_zone": "West Zone",
+      "contact_phone": "+91 11 25967590",
+      "source": "https://dmwest.delhi.gov.in/about-district/whos-who/"
+    },
+    {
+      "name": "District Social Welfare Office (Central), Delhi Gate",
+      "address": "Type IV Staff Quarters, GLNS Complex, Delhi Gate, New Delhi, India",
+      "location_zone": "Central Zone",
+      "contact_phone": "+91 9289550125",
+      "source": "https://socialwelfare.delhi.gov.in/social/contact-us"
+    },
+    {
+      "name": "SDM Office, Karol Bagh",
+      "address": "Flatted Factory Complex Building, Jhandewalan, New Delhi, India",
+      "location_zone": "Central Zone",
+      "contact_phone": "+91 11 23559400",
+      "source": "https://revenue.delhi.gov.in/revenue/sub-division-offices"
+    }
+  ]
+}

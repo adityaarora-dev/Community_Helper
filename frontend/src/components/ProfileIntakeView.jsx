@@ -37,7 +37,7 @@ export default function ProfileIntakeView({ onRunMatch, user, onProfileSaved, is
     getUserProfile(user.user_id).then(({ user: latest }) => {
       if (!current) return;
       setSaved(latest); setDraft(draftFrom(latest));
-      localStorage.setItem('civic_user', JSON.stringify(latest));
+
       onProfileSaved(latest);
     }).catch(() => { if (current) setRefreshError(true); })
       .finally(() => { if (current) setLoading(false); });
@@ -61,7 +61,7 @@ export default function ProfileIntakeView({ onRunMatch, user, onProfileSaved, is
       for (const key of Object.keys(payload)) if (payload[key] === '') payload[key] = null;
       const { user: latest } = await updateUserProfile(user.user_id, payload);
       if (!alive.current) return;
-      localStorage.setItem('civic_user', JSON.stringify(latest));
+
       setSaved(latest); setDraft(draftFrom(latest));
       onProfileSaved(latest); setStatus('saved'); endEditing();
     } catch { if (alive.current) setStatus('error'); }

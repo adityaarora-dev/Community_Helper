@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { clearSession, getSessionToken, touchSession } from './services/authSession';
+import { logoutUser, keepSessionActive } from './services/api';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import AdminView from './components/AdminView';
@@ -10,9 +12,37 @@ function Portal() {
   const [activeTab, setActiveTab] = useState('home');
   const [authMode, setAuthMode] = useState('login');
   const [catalogCategory, setCatalogCategory] = useState('');
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('civic_user') || 'null'); } catch { return null; }
-  });
+  const [user, setUser] = useState(null);
+  useEffect(() => { clearSession(); }, []);
+  useEffect(() => {
+    const ended = () => { setUser(null); setActiveTab('login'); };
+    window.addEventListener('civic-session-ended', ended);
+    if (!user) return () => window.removeEventListener('civic-session-ended', ended);
+    let lastPing = 0;
+    const activity = (event) => {
+      if (!event.isTrusted || !getSessionToken()) return;
+      touchSession();
+      if (Date.now() - lastPing > 60000) {
+        lastPing = Date.now(); keepSessionActive().catch(() => {});
+      }
+    };
+    const check = () => { getSessionToken(); };
+    const timer = setInterval(check, 15000);
+    window.addEventListener('pointerdown', activity);
+    window.addEventListener('keydown', activity);
+    window.addEventListener('scroll', activity, true);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('pageshow', check);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('civic-session-ended', ended);
+      window.removeEventListener('pointerdown', activity);
+      window.removeEventListener('keydown', activity);
+      window.removeEventListener('scroll', activity, true);
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('pageshow', check);
+    };
+  }, [user?.user_id]);
   const navigate = (tab, category = '') => {
     if (tab === '/allschemes') setCatalogCategory(category);
     if (tab === 'register' || tab === 'login') { setAuthMode(tab === 'register' ? 'register' : 'login'); setActiveTab('login'); }
@@ -20,8 +50,9 @@ function Portal() {
   };
   const inbox = useNotifications(user);
   const logout = () => {
-    localStorage.removeItem('civic_auth_token');
-    localStorage.removeItem('civic_user');
+    // Capture the token before clearing it so logout can revoke this exact session.
+    void logoutUser().catch(() => {});
+    clearSession();
     setUser(null);
     setActiveTab('home');
   };
