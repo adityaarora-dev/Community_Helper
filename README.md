@@ -68,19 +68,23 @@ Use these pre-seeded accounts to sign in via the **Citizen Sign In** modal:
 
 ---
 
-## AI Architecture & Gemini API Key
-Powered by Google GenAI SDK (`@google/genai`):
-* **Key Role**: Powers unstructured language understanding, strict JSON demographic extraction, multi-turn conversational follow-up questions, and grounded benefit explanations.
-* **Deterministic Relational Guardrail**: The LLM NEVER generates SQL queries. It only extracts demographic JSON parameters, which the backend safely maps to parameterized SQL (`$1..$8`).
-* **Models**: Primary `gemini-3.5-flash` with fallback to `gemini-3.8-flash` and rule-based heuristic parser.
-
----
-
-## Roadmap (What More to Go)
-1. Scheme bookmarking & application status tracker.
-2. Document verification & upload via Supabase Storage.
-3. Multilingual voice/text support (Hindi, regional languages).
-4. Cloud deployment (Vercel + Render).
+## AI-Powered Text-to-SQL Architecture (Zero Fallbacks)
+Powered by Google GenAI SDK (`@google/genai`) and Supabase PostgreSQL:
+* **Real AI Text-to-SQL Pipeline**:
+  `User Prompt → Intent & Context Analysis → Schema Discovery → Dynamic SQL Generation → Independent SQL Validation → Safe DB Execution → Result Grounding → Conversational AI Answer`
+* **Zero Fallbacks Guarantee**: Every database query is dynamically formulated by the AI model against the live PostgreSQL schema. There are zero mock databases, zero hardcoded queries, and zero simulated responses. If validation rejects a query or execution fails, the genuine error is returned.
+* **Database Schema Awareness**: Live schema discovery directly from PostgreSQL `information_schema` (tables, columns, data types, primary keys, and foreign keys). Sensitive columns such as `password_hash` and admin tables are strictly excluded.
+* **Conversational Context Resolution**: Multi-turn history preserves active filters, pronoun references ("those", "them"), ordering, and aggregations across turns until topic changes.
+* **Execution Safety & Timeouts**:
+  - Independent zero-trust SQL validation rejects non-SELECT queries, DDL, DML, multi-statements, and sensitive table/column access.
+  - Queries execute within a dedicated read-only transaction (`BEGIN READ ONLY`) with a per-query `statement_timeout` (default 5000ms).
+  - Row limits are enforced (default 50, maximum 100).
+* **Grounded Answers**: The AI model formulates natural conversational answers strictly grounded in the real executed rows and metadata.
+* **Testing Command**:
+  ```bash
+  cd backend
+  npm run test:text-to-sql
+  ```
 # Zone notifications
 
 New accounts select an area during signup. Successful email verification opens the AI assistant; returning-user sign-in still opens the saved profile.

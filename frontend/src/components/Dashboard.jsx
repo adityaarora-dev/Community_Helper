@@ -42,16 +42,47 @@ export default function Dashboard({ activeTab, setActiveTab, user, onAuthSuccess
       .map((key) => [key, profileDetails[key]]));
 
     try {
-      const result = await sendChatMessage({ ...(text ? { query: text } : {}), demographics: known, history: messages.filter((m) => !m.error), userId: user?.user_id, language });
+      const chatHistory = messages.filter((m) => !m.error).map((m) => ({
+        role: m.role,
+        content: m.content,
+        sql: m.sql || undefined,
+      }));
+      const result = await sendChatMessage({
+        ...(text ? { query: text } : {}),
+        demographics: known,
+        history: chatHistory,
+        userId: user?.user_id,
+        language,
+      });
       if (id !== requestId.current) return;
       setSchemes(result.schemes || []); setHasSearched(true);
       if (result.extracted_params) setDemographics((prev) => ({ ...prev, ...result.extracted_params }));
-      if (text) setMessages((prev) => [...prev, { role: 'assistant', content: result.conversational_reply || result.summary, matchedCount: result.matched_count }]);
+      if (text) setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: result.conversational_reply || result.summary,
+        matchedCount: result.matched_count,
+        sql: result.sql,
+        thought: result.thought,
+        explanation: result.explanation,
+        executionTimeMs: result.execution_time_ms,
+        rowCount: result.row_count,
+        columns: result.columns,
+        rows: result.rows,
+      }]);
       setActiveTab('/chat/ai');
-    } catch {
+    } catch (err) {
       if (id !== requestId.current) return;
       setError(true);
-      if (text) setMessages((prev) => [...prev, { role: 'assistant', error: true }]);
+      const errMsg = err.response?.data?.message || err.message || 'Error processing request';
+      const errorType = err.response?.data?.error_type;
+      const attemptedSql = err.response?.data?.attempted_sql;
+      if (text) setMessages((prev) => [...prev, {
+        role: 'assistant',
+        error: true,
+        content: errMsg,
+        errorType,
+        attemptedSql,
+      }]);
     } finally { if (id === requestId.current) setIsLoading(false); }
   };
   const guard = <section className="auth-guard panel"><p className="eyebrow">{t('profile')}</p><h1>{t('getStarted')}</h1><p>{t('signInNote')}</p><div className="form-actions"><button className="button button-primary" onClick={() => setActiveTab('register')}>{t('signUp')}<ArrowRight size={17} /></button><button className="button button-outline" onClick={() => setActiveTab('login')}>{t('signIn')}</button></div></section>;
