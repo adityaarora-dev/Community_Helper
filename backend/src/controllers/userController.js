@@ -351,52 +351,14 @@ async function getProfile(req, res) {
  */
 async function updateProfile(req, res) {
   try {
-    const { userId } = req.params;
-    const {
-      name,
-      annual_income,
-      family_size,
-      location_zone,
-      age,
-      gender,
-      occupation,
-      social_category,
-      disability_status,
-      landholding_acres,
-    } = req.body;
-
-    const updateSql = `
-      UPDATE users
-      SET
-        name = COALESCE($1, name),
-        annual_income = COALESCE($2, annual_income),
-        family_size = COALESCE($3, family_size),
-        location_zone = COALESCE($4, location_zone),
-        age = COALESCE($5, age),
-        gender = COALESCE($6, gender),
-        occupation = COALESCE($7, occupation),
-        social_category = COALESCE($8, social_category),
-        disability_status = COALESCE($9, disability_status),
-        landholding_acres = COALESCE($10, landholding_acres)
-      WHERE user_id = $11
-      RETURNING user_id, name, email, annual_income, family_size, location_zone, age, gender, occupation, social_category, disability_status, landholding_acres, created_at;
-    `;
-
-    const values = [
-      name || null,
-      annual_income !== undefined ? Number(annual_income) : null,
-      family_size !== undefined ? parseInt(family_size, 10) : null,
-      location_zone || null,
-      age !== undefined ? parseInt(age, 10) : null,
-      gender || null,
-      occupation || null,
-      social_category || null,
-      disability_status !== undefined ? Boolean(disability_status) : null,
-      landholding_acres !== undefined ? Number(landholding_acres) : null,
-      userId,
-    ];
-
-    const result = await query(updateSql, values);
+    const { buildProfileUpdate } = require('../services/profileUpdate');
+    let update;
+    try {
+      update = buildProfileUpdate(req.body, req.params.userId);
+    } catch (error) {
+      return res.status(400).json({ status: 'error', message: error.message });
+    }
+    const result = await query(update.sql, update.values);
     if (result.rows.length === 0) {
       return res.status(404).json({ status: 'error', message: 'User not found.' });
     }

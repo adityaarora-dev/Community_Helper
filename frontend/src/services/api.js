@@ -10,6 +10,14 @@ const client = axios.create({
   timeout: 15000,
 });
 
+export async function getNotifications() {
+  return (await client.get('/api/notifications')).data;
+}
+
+export async function markNotificationRead(id) {
+  return (await client.patch(`/api/notifications/${id}/read`)).data;
+}
+
 // Attach JWT token to requests if present in localStorage
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('civic_auth_token');

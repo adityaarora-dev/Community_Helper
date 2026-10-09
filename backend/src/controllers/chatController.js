@@ -54,6 +54,7 @@ async function handleChat(req, res) {
       ? Number(extractedParams.landholding_acres)
       : null;
     const zone = extractedParams.location_zone || null;
+    const category = extractedParams.category || null;
 
     // Step 2: Deterministic Relational SQL Filtering
     // Strictly parameterized to prevent SQL Injection
@@ -87,6 +88,7 @@ async function handleChat(req, res) {
         AND ($6::varchar IS NULL OR r.target_social_category IS NULL OR r.target_social_category ILIKE $6::varchar)
         AND (r.requires_disability = FALSE OR $7::boolean = TRUE)
         AND ($8::numeric IS NULL OR r.max_landholding IS NULL OR $8::numeric <= r.max_landholding)
+        AND ($9::varchar IS NULL OR s.category ILIKE '%' || $9::varchar || '%' OR $9::varchar ILIKE '%' || s.category || '%')
       ORDER BY s.total_benefit_value DESC;
     `;
 
@@ -99,7 +101,9 @@ async function handleChat(req, res) {
       socialCategory,  // $6
       hasDisability,   // $7
       landholding,     // $8
+      category,        // $9
     ];
+
 
     const schemesResult = await query(sql, sqlParams);
     const matchedSchemes = schemesResult.rows;

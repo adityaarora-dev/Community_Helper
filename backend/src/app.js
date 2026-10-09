@@ -38,6 +38,8 @@ app.use('/health', healthRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api', schemeRoutes);
 
 // 404 handler

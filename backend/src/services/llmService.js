@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { GoogleGenAI, Type } = require('@google/genai');
 
-const CANDIDATE_MODELS = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.7-flash'];
+const CANDIDATE_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
 /**
  * Parameter Extraction JSON Schema for Structured Output
@@ -45,6 +45,10 @@ const demographicExtractionSchema = {
       type: Type.NUMBER,
       description: 'Agricultural land owned in acres. Null if unspecified.',
     },
+    category: {
+      type: Type.STRING,
+      description: 'Welfare scheme domain or sector if stated or implied (e.g., "Healthcare", "Agriculture", "Housing", "Education", "Financial Inclusion", "Employment / Skill Development"). Null if general/unspecified.',
+    },
     summary_of_situation: {
       type: Type.STRING,
       description: 'Brief 1-sentence synopsis of the citizen context extracted from their query.',
@@ -70,6 +74,7 @@ const conversationalFlowSchema = {
         social_category: { type: Type.STRING, description: 'Social category or null' },
         disability_status: { type: Type.BOOLEAN, description: 'Disability flag true/false' },
         landholding_acres: { type: Type.NUMBER, description: 'Acres or null' },
+        category: { type: Type.STRING, description: 'Scheme domain or category (e.g. Healthcare, Agriculture, Housing, Education, Financial Inclusion, Employment / Skill Development) or null' },
       },
     },
     conversational_reply: {
@@ -126,6 +131,7 @@ function heuristicExtract(text) {
     social_category: null,
     disability_status: false,
     landholding_acres: null,
+    category: null,
     summary_of_situation: 'Parsed using rule-based demographic extraction.',
   };
 
@@ -198,6 +204,21 @@ function heuristicExtract(text) {
     result.landholding_acres = parseFloat(landMatch[1]);
   }
 
+  // Category / Domain extraction
+  if (lower.includes('health') || lower.includes('medical') || lower.includes('swasthya') || lower.includes('hospital') || lower.includes('doctor') || lower.includes('treatment') || lower.includes('medicine') || lower.includes('dawa') || lower.includes('patient') || lower.includes('ayushman')) {
+    result.category = 'Healthcare';
+  } else if (lower.includes('agri') || lower.includes('kisan') || lower.includes('crop') || lower.includes('kheti') || lower.includes('krishi')) {
+    result.category = 'Agriculture';
+  } else if (lower.includes('housing') || lower.includes('house') || lower.includes('awas') || lower.includes('ghar') || lower.includes('makan') || lower.includes('shelter') || lower.includes('pucca')) {
+    result.category = 'Housing';
+  } else if (lower.includes('educat') || lower.includes('school') || lower.includes('college') || lower.includes('scholarship') || lower.includes('padhai') || lower.includes('shiksha') || lower.includes('study')) {
+    result.category = 'Education';
+  } else if (lower.includes('loan') || lower.includes('credit') || lower.includes('finance') || lower.includes('financial') || lower.includes('micro-loan') || lower.includes('svanidhi')) {
+    result.category = 'Financial Inclusion';
+  } else if (lower.includes('skill') || lower.includes('training') || lower.includes('employ') || lower.includes('job') || lower.includes('rozgar') || lower.includes('kaushal') || lower.includes('pmkvy')) {
+    result.category = 'Employment / Skill Development';
+  }
+
   return result;
 }
 
@@ -224,7 +245,7 @@ function sanitizeExtracted(raw) {
     clean.disability_status = Boolean(raw.disability_status);
   }
 
-  ['location_zone', 'gender', 'occupation', 'social_category'].forEach((k) => {
+  ['location_zone', 'gender', 'occupation', 'social_category', 'category'].forEach((k) => {
     if (raw[k] && typeof raw[k] === 'string' && raw[k].toLowerCase() !== 'unknown' && raw[k].toLowerCase() !== 'null') {
       clean[k] = raw[k].trim();
     }
@@ -232,6 +253,7 @@ function sanitizeExtracted(raw) {
 
   return clean;
 }
+
 
 /**
  * Conversational Turn Processor with Multilingual Support

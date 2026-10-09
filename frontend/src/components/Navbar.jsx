@@ -1,256 +1,144 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Sparkles,
-  Database,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Home,
-  MessageSquare,
-  FileCheck,
-  Building2,
-  MapPin,
-  User,
-  LogOut,
-  Globe,
-  ChevronDown,
-  Lock,
-} from 'lucide-react';
-import { checkHealth } from '../services/api';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowUpRight, Globe, Menu, X, LogOut, UserRound, Bell } from 'lucide-react';
+import { useLanguage, languages } from '../i18n';
 
-const LANGUAGES = [
-  { code: 'English', label: 'English', flag: '🇬🇧' },
-  { code: 'Hindi', label: 'हिंदी (Hindi)', flag: '🇮🇳' },
-  { code: 'Bengali', label: 'বাংলা (Bengali)', flag: '🇮🇳' },
-  { code: 'Marathi', label: 'मराठी (Marathi)', flag: '🇮🇳' },
-  { code: 'Telugu', label: 'తెలుగు (Telugu)', flag: '🇮🇳' },
-  { code: 'Tamil', label: 'தமிழ் (Tamil)', flag: '🇮🇳' },
-];
+export default function Navbar({ activeTab, setActiveTab, user, onLogout, language, setLanguage, unreadCount = 0 }) {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const account = useRef(null);
+  const avatar = useRef(null);
+  const accountMenu = useRef(null);
+  const mobileToggle = useRef(null);
+  const firstFocus = useRef(0);
+  const items = [
+    ['home', 'home'], ['/allschemes', 'schemes'], ['/chat/ai', 'assistant'],
+    ['/citizen/intake', 'profile'], ['/servicecenters', 'centers'],
+  ];
+  const initials = (user?.name || user?.email || 'C').trim().split(/\s+/).slice(0, 2).map((part) => Array.from(part)[0]).join('').toUpperCase();
 
-export default function Navbar({
-  activeTab,
-  setActiveTab,
-  user,
-  onLogout,
-  language,
-  setLanguage,
-}) {
-  const [dbStatus, setDbStatus] = useState('checking');
-  const [poolCount, setPoolCount] = useState(null);
-  const [langOpen, setLangOpen] = useState(false);
-
-  const verifyConnection = async () => {
-    try {
-      setDbStatus('checking');
-      const data = await checkHealth();
-      if (data.status === 'success') {
-        setDbStatus('connected');
-        setPoolCount(data.database?.pool?.totalCount || 1);
-      } else {
-        setDbStatus('error');
-      }
-    } catch {
-      setDbStatus('error');
-    }
+  const closeAccount = (restoreFocus = false) => {
+    setAccountOpen(false);
+    if (restoreFocus) avatar.current?.focus();
+  };
+  const go = (tab) => {
+    setActiveTab(tab);
+    setOpen(false);
+    closeAccount();
   };
 
   useEffect(() => {
-    verifyConnection();
-    const interval = setInterval(verifyConnection, 20000);
-    return () => clearInterval(interval);
-  }, []);
+    setAccountOpen(false);
+    setOpen(false);
+  }, [activeTab, user?.user_id]);
 
-  // Standardized Router Routes matching user specification:
-  // HOME -> AUTH/LOGIN -> /citizen/intake, /chat/ai, /servicecenters, /allschemes
-  const NAV_ITEMS = [
-    { id: 'home', path: '/', label: 'Home', icon: Home, requiresAuth: false },
-    { id: '/chat/ai', path: '/chat/ai', label: 'Chat AI', icon: MessageSquare, requiresAuth: true },
-    { id: '/citizen/intake', path: '/citizen/intake', label: 'Citizen Intake', icon: FileCheck, requiresAuth: true },
-    { id: '/allschemes', path: '/allschemes', label: 'All Schemes', icon: Building2, requiresAuth: false },
-    { id: '/servicecenters', path: '/servicecenters', label: 'Service Centers', icon: MapPin, requiresAuth: false },
-  ];
+  useEffect(() => {
+    if (accountOpen) {
+      const buttons = accountMenu.current?.querySelectorAll('[role="menuitem"]');
+      buttons?.[firstFocus.current === -1 ? buttons.length - 1 : 0]?.focus();
+    }
+  }, [accountOpen]);
+
+  useEffect(() => {
+    if (!accountOpen && !open) return;
+    const outside = (event) => {
+      if (accountOpen && !account.current?.contains(event.target)) setAccountOpen(false);
+    };
+    const escape = (event) => {
+      if (event.key !== 'Escape') return;
+      if (accountOpen) { setAccountOpen(false); avatar.current?.focus(); }
+      else { setOpen(false); mobileToggle.current?.focus(); }
+    };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', outside);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [accountOpen, open]);
+
+  const menuKeys = (event) => {
+    const buttons = Array.from(accountMenu.current.querySelectorAll('[role="menuitem"]'));
+    const index = buttons.indexOf(document.activeElement);
+    let next;
+    if (event.key === 'ArrowDown') next = (index + 1) % buttons.length;
+    if (event.key === 'ArrowUp') next = (index - 1 + buttons.length) % buttons.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = buttons.length - 1;
+    if (next !== undefined) { event.preventDefault(); buttons[next].focus(); }
+  };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-emerald-500/20 bg-slate-950/85 backdrop-blur-2xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {/* Brand */}
-        <div
-          onClick={() => setActiveTab('home')}
-          className="flex items-center gap-3 cursor-pointer group"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-amber-400 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
-            <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-slate-950">
-              <Sparkles className="h-5 w-5 text-emerald-400" />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold tracking-tight text-white sm:text-base">
-                Civic<span className="text-emerald-400">Helper</span> <span className="text-amber-400">AI</span>
-              </h1>
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
-                v2.0 Enterprise
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
-              Intelligent Community Resource Engine &bull; Supabase PostgreSQL
-            </p>
-          </div>
-        </div>
-
-        {/* Tab Switcher */}
-        <nav className="hidden md:flex items-center gap-1 rounded-2xl border border-slate-800 bg-slate-900/60 p-1">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const active = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
-                  active
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{item.label}</span>
-                {item.requiresAuth && !user && (
-                  <Lock className="h-2.5 w-2.5 text-amber-400/80" />
-                )}
-              </button>
-            );
-          })}
+    <header className="site-header">
+      <div className="nav-main">
+        <button className="wordmark brand-button" onClick={() => go('home')} aria-label="CivicHelper">
+          CivicHelper<span className="brand-dot">.</span>
+        </button>
+        <nav className="desktop-nav" aria-label={t('menu')}>
+          {items.map(([id, key]) => (
+            <button key={id} className={'nav-link ' + (activeTab === id ? 'is-active' : '')}
+              aria-current={activeTab === id ? 'page' : undefined} onClick={() => go(id)}>{t(key)}</button>
+          ))}
         </nav>
-
-        {/* Right Actions: Language Selector, DB Status, Auth */}
-        <div className="flex items-center gap-2.5">
-          {/* Multilingual Selector Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setLangOpen(!langOpen)}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:border-emerald-500/40 hover:text-white transition"
-              title="Select Conversation Language"
-            >
-              <Globe className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">
-                {LANGUAGES.find((l) => l.code === language)?.label.split(' ')[0] || 'EN'}
-              </span>
-              <ChevronDown className="h-3 w-3 text-slate-400" />
-            </button>
-
-            {langOpen && (
-              <div className="absolute right-0 mt-2 w-44 overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-900 p-1 shadow-2xl backdrop-blur-xl z-50">
-                <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Select Language
-                </div>
-                {LANGUAGES.map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => {
-                      setLanguage(l.code);
-                      setLangOpen(false);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition ${
-                      language === l.code
-                        ? 'bg-emerald-600 text-white font-bold'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    <span>{l.label}</span>
-                    <span className="text-xs">{l.flag}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Supabase Status Indicator */}
-          <button
-            onClick={verifyConnection}
-            title="Supabase PostgreSQL Pooler Health"
-            className="hidden lg:flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800"
-          >
-            <Database className="h-3.5 w-3.5 text-slate-400" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-400">PostgreSQL:</span>
-              {dbStatus === 'connected' ? (
-                <span className="flex items-center gap-1 font-semibold text-emerald-400">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Active
-                </span>
-              ) : dbStatus === 'checking' ? (
-                <span className="flex items-center gap-1 text-amber-400">
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                  Checking
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 font-semibold text-rose-400">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  Offline
-                </span>
-              )}
-            </div>
-          </button>
-
-          {/* Citizen Auth Button / Profile Badge */}
+        <div className="nav-actions">
+          {user && <button className="notification-button icon-button" aria-label={`${t('notifications')}${unreadCount ? ` (${unreadCount} ${t('unread')})` : ''}`} aria-current={activeTab === '/notifications' ? 'page' : undefined} onClick={() => go('/notifications')}><Bell size={19} />{unreadCount > 0 && <span className="notification-count" aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>}
+          <label className="language-select">
+            <Globe size={16} aria-hidden="true" /><span className="sr-only">{t('language')}</span>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+              {languages.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+            </select>
+          </label>
           {user ? (
-            <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-slate-900/90 px-3 py-1.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-xs font-bold text-white">
-                {user.name ? user.name.charAt(0).toUpperCase() : 'C'}
-              </div>
-              <div className="hidden xl:block text-left">
-                <p className="text-xs font-semibold text-white leading-tight">{user.name}</p>
-                <p className="text-[10px] text-slate-400 leading-tight truncate max-w-[110px]">{user.email}</p>
-              </div>
-              <button
-                onClick={onLogout}
-                title="Sign Out"
-                className="ml-1 rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
+            <div className="account-control" ref={account} onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setAccountOpen(false);
+            }}>
+              <button ref={avatar} className="avatar-button" aria-label={t('accountMenu')}
+                aria-haspopup="menu" aria-expanded={accountOpen} aria-controls={accountOpen ? 'account-menu' : undefined}
+                onClick={() => { firstFocus.current = 0; setOpen(false); setAccountOpen(!accountOpen); }}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault(); firstFocus.current = event.key === 'ArrowUp' ? -1 : 0;
+                    setOpen(false); setAccountOpen(true);
+                  }
+                }}>{initials}</button>
+              {accountOpen && (
+                <div className="account-dropdown" id="account-menu" role="menu" aria-label={t('accountMenu')}
+                  ref={accountMenu} onKeyDown={menuKeys}>
+                  <div className="account-caption" role="presentation"><strong>{user.name}</strong><span>{user.email}</span></div>
+                  <button role="menuitem" tabIndex={-1} onClick={() => { go('/citizen/intake'); avatar.current?.focus(); }}>
+                    <UserRound size={17} />{t('profile')}
+                  </button>
+                  <div className="menu-divider" role="separator" />
+                  <button role="menuitem" tabIndex={-1} onClick={() => { closeAccount(); setOpen(false); onLogout(); }}>
+                    <LogOut size={17} />{t('signOut')}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            <button
-              onClick={() => setActiveTab('login')}
-              className={`flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition active:scale-95 ${
-                activeTab === 'login'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
-                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30 hover:brightness-110'
-              }`}
-            >
-              <User className="h-3.5 w-3.5" />
-              <span>Login / Create</span>
-            </button>
+            <>
+              <button className="nav-link sign-in-link" onClick={() => go('login')}>{t('signIn')}</button>
+              <button className="button button-primary account-button" onClick={() => go('register')}>
+                {t('signUp')}<ArrowUpRight size={16} />
+              </button>
+            </>
           )}
+          <button ref={mobileToggle} className="icon-button mobile-toggle" aria-label={t('menu')}
+            aria-expanded={open} aria-controls="mobile-nav"
+            onClick={() => { closeAccount(); setOpen(!open); }}>
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </div>
-
-      {/* Mobile Tab Strip */}
-      <div className="flex md:hidden border-t border-slate-800/60 bg-slate-950 px-2 py-1.5 overflow-x-auto no-scrollbar gap-1">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const active = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-                active
-                  ? 'bg-emerald-600 text-white font-bold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              <span>{item.label}</span>
-              {item.requiresAuth && !user && (
-                <Lock className="h-2 w-2 text-amber-400/80" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {open && (
+        <nav id="mobile-nav" className="mobile-nav" aria-label={t('menu')}>
+          {items.map(([id, key]) => (
+            <button key={id} className={'nav-link ' + (activeTab === id ? 'is-active' : '')}
+              onClick={() => go(id)} aria-current={activeTab === id ? 'page' : undefined}>{t(key)}</button>
+          ))}
+          {!user && <button className="nav-link" onClick={() => go('login')}>{t('signIn')}</button>}
+        </nav>
+      )}
     </header>
   );
 }

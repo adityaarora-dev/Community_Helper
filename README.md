@@ -81,3 +81,14 @@ Powered by Google GenAI SDK (`@google/genai`):
 2. Document verification & upload via Supabase Storage.
 3. Multilingual voice/text support (Hindi, regional languages).
 4. Cloud deployment (Vercel + Render).
+# Zone notifications
+
+New accounts select an area during signup. Successful email verification opens the AI assistant; returning-user sign-in still opens the saved profile.
+
+The navbar bell opens persistent **in-app** scheme notifications. A new scheme alerts accounts whose saved `users.location_zone` matches its `govt_schemes.location_zone` at insertion time (case and surrounding whitespace are ignored). Alerts are saved even when users are offline and refresh within 30 seconds while signed in. Opening a scheme marks its notification read; read status is stored per account. Changing the profile zone affects future notifications.
+
+When adding a scheme through the existing database workflow, include `location_zone` in the same INSERT, using `North Zone`, `South Zone`, `East Zone`, `West Zone`, or `Central Zone`. Unspecified/national schemes (`NULL` zone) do not generate local alerts. Existing schemes are not backfilled and editing a scheme does not resend an alert. There is no scheme-creation admin screen in this project.
+
+For an existing database, run `npm run db:migrate-notifications` from `backend`. This additive migration preserves data and can be rerun. Do **not** use `db:init` to upgrade an existing database; that command resets data. Fresh database initialization also installs the notification schema.
+
+Run `npm run test:notifications` from `backend` to check verified signup, zone matching, persisted read state, and account isolation. Its test records are rolled back and email delivery is stubbed; no notification emails are sent. These are account inbox notifications, not email or browser push notifications.

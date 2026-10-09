@@ -16,6 +16,7 @@ async function initializeDatabase() {
     console.log('⏳ Executing DDL and Seed queries on Supabase PostgreSQL...');
     const startTime = Date.now();
     await query(sqlContent);
+    await query(await fs.readFile(path.join(__dirname, '../db/zoneNotifications.sql'), 'utf8'));
     const elapsed = Date.now() - startTime;
     console.log(`✅ SQL script executed successfully in ${elapsed}ms!\n`);
 
