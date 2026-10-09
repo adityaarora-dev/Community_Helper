@@ -1,32 +1,8 @@
-:root {
-  --bg-color: #0d1117;
-  --surface-color: #161b22;
-  --surface-border: #30363d;
-  --text-main: #f0f6fc;
-  --text-secondary: #8b949e;
-  --accent-green: #3fb950;
-  --accent-green-bg: rgba(63, 185, 80, 0.15);
-  --accent-red: #f85149;
-  --accent-red-bg: rgba(248, 81, 73, 0.15);
-  --accent-yellow: #d29922;
-  --accent-yellow-bg: rgba(210, 153, 34, 0.15);
-  --accent-blue: #58a6ff;
-  --accent-blue-bg: rgba(88, 166, 255, 0.15);
-  --primary-btn: #238636;
-  --primary-btn-hover: #2ea043;
-}
+@import "tailwindcss";
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  min-height: 100vh;
-  padding: 24px;
-  line-height: 1.5;
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased min-h-screen selection:bg-emerald-500/30 selection:text-emerald-200;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
 }

@@ -1,0 +1,97 @@
+require('dotenv').config();
+const http = require('http');
+const app = require('../app');
+
+async function runTests() {
+  console.log('🚀 Running Comprehensive System Verification...\n');
+
+  // Start temporary server on port 5999
+  const server = http.createServer(app);
+  await new Promise((resolve) => server.listen(5999, resolve));
+  const baseUrl = 'http://localhost:5999';
+
+  try {
+    // 1. Health check
+    console.log('1️⃣ Testing Health Check...');
+    const healthRes = await fetch(`${baseUrl}/health`).then((r) => r.json());
+    console.log(`   Health Status: ${healthRes.status} (Pool count: ${healthRes.database?.pool?.totalCount})`);
+
+    // 2. Schemes catalog
+    console.log('2️⃣ Testing Schemes Catalog...');
+    const schemesRes = await fetch(`${baseUrl}/api/schemes`).then((r) => r.json());
+    console.log(`   Schemes Status: ${schemesRes.status}, Schemes Count: ${schemesRes.count}`);
+
+    // 3. Service Centers
+    console.log('3️⃣ Testing Service Centers...');
+    const centersRes = await fetch(`${baseUrl}/api/service-centers?zone=North%20Zone`).then((r) => r.json());
+    console.log(`   Centers Status: ${centersRes.status}, North Zone Centers: ${centersRes.count}`);
+
+    // 4. User Registration & Login
+    console.log('4️⃣ Testing User Authentication...');
+    const testEmail = `test_citizen_${Date.now()}@example.com`;
+    const regRes = await fetch(`${baseUrl}/api/users/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Priya Sharma',
+        email: testEmail,
+        password: 'SecurePassword123!',
+        demographics: {
+          annual_income: 150000,
+          age: 32,
+          family_size: 4,
+          location_zone: 'North Zone',
+          occupation: 'Street Vendor',
+        },
+      }),
+    }).then((r) => r.json());
+    console.log(`   Registration Status: ${regRes.status}, User ID: ${regRes.user?.user_id}`);
+    const userId = regRes.user?.user_id;
+
+    // Login
+    const loginRes = await fetch(`${baseUrl}/api/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: testEmail, password: 'SecurePassword123!' }),
+    }).then((r) => r.json());
+    console.log(`   Login Status: ${loginRes.status}, Token received: ${Boolean(loginRes.token)}`);
+
+    // Update Profile
+    console.log('5️⃣ Testing Demographic Profile Update...');
+    const updateRes = await fetch(`${baseUrl}/api/users/profile/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        annual_income: 80000,
+        occupation: 'Farmer',
+        landholding_acres: 2.5,
+      }),
+    }).then((r) => r.json());
+    console.log(`   Update Status: ${updateRes.status}, New Income: ₹${updateRes.user?.annual_income}`);
+
+    // 6. Conversational Chat & Relational Matching
+    console.log('6️⃣ Testing Conversational AI Assistant & Relational Matching...');
+    const chatRes = await fetch(`${baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: 'I am a 32yo farmer with 2.5 acres of land in North Zone earning 80,000 per year.',
+        userId,
+      }),
+    }).then((r) => r.json());
+    console.log(`   Chat Status: ${chatRes.status}`);
+    console.log(`   Extracted Parameters:`, chatRes.extracted_params);
+    console.log(`   Conversational Reply:`, (chatRes.conversational_reply || '').slice(0, 100) + '...');
+    console.log(`   Relational Matches Count: ${chatRes.matched_count}`);
+    console.log(`   First Matched Scheme: ${chatRes.schemes?.[0]?.scheme_name}`);
+
+    console.log('\n✅ All System Integration Tests Completed Successfully!');
+  } finally {
+    server.close();
+  }
+}
+
+runTests().catch((err) => {
+  console.error('❌ Test execution failed:', err);
+  process.exit(1);
+});

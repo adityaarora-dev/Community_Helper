@@ -1,127 +1,67 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Header from './components/Header';
-import ConfigPanel from './components/ConfigPanel';
-import MetricsGrid from './components/MetricsGrid';
-import ResponseViewer from './components/ResponseViewer';
-import ArchitectureCard from './components/ArchitectureCard';
-import { fetchHealthCheck } from './services/api';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import Dashboard from './components/Dashboard';
 
 export default function App() {
-  const [backendUrl, setBackendUrl] = useState('http://localhost:5000');
-  const [isLoading, setIsLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'chat_ai' | 'intake' | 'schemes' | 'centers' | 'login'
+  const [user, setUser] = useState(null);
+  const [language, setLanguage] = useState('English');
 
-  const [status, setStatus] = useState('checking'); // 'online' | 'offline' | 'checking'
-  const [statusText, setStatusText] = useState('Checking...');
-  const [httpBadge, setHttpBadge] = useState('HTTP --');
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [responseData, setResponseData] = useState(null);
-
-  const [metrics, setMetrics] = useState({
-    dbStatus: '--',
-    dbName: 'postgres',
-    latency: null,
-    poolCount: '-- / 10',
-    poolSub: 'Total / Max Limit',
-    lastTime: '--:--:--',
-    lastDate: 'Awaiting check',
-    isConnected: false,
-  });
-
-  const checkHealth = useCallback(async () => {
-    setIsLoading(true);
-    setStatus('checking');
-    setStatusText('Checking...');
-
-    const result = await fetchHealthCheck(backendUrl);
-
-    setResponseData(result.data);
-    setHttpBadge(`HTTP ${result.status} ${result.statusText || ''}`);
-
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString();
-    const dateStr = now.toLocaleDateString();
-
-    if (result.ok && result.data?.status === 'success') {
-      setStatus('online');
-      setStatusText('Database Connected');
-      setIsSuccess(true);
-
-      const db = result.data.database;
-      setMetrics({
-        dbStatus: 'Connected ✅',
-        dbName: `DB: ${db?.name || 'postgres'}`,
-        latency: result.elapsed,
-        poolCount: db?.pool ? `${db.pool.totalCount} / 10` : 'Active',
-        poolSub: db?.pool
-          ? `Idle: ${db.pool.idleCount} | Waiting: ${db.pool.waitingCount}`
-          : 'Total / Max',
-        lastTime: timeStr,
-        lastDate: dateStr,
-        isConnected: true,
-      });
-    } else {
-      setStatus('offline');
-      setStatusText('Offline / Error');
-      setIsSuccess(false);
-
-      setMetrics({
-        dbStatus: 'Error ❌',
-        dbName: 'postgres',
-        latency: result.elapsed,
-        poolCount: '-- / 10',
-        poolSub: 'Unavailable',
-        lastTime: timeStr,
-        lastDate: 'Failed',
-        isConnected: false,
-      });
+  // Load existing session on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('civic_user');
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch {
+      localStorage.removeItem('civic_user');
     }
+  }, []);
 
-    setIsLoading(false);
-  }, [backendUrl]);
+  const handleLogout = () => {
+    localStorage.removeItem('civic_auth_token');
+    localStorage.removeItem('civic_user');
+    setUser(null);
+  };
 
-  // Initial check on mount
-  useEffect(() => {
-    checkHealth();
-  }, [checkHealth]);
-
-  // Auto-refresh interval
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      checkHealth();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [autoRefresh, checkHealth]);
+  const handleAuthSuccess = (authenticatedUser) => {
+    setUser(authenticatedUser);
+  };
 
   return (
-    <div className="app-container">
-      <Header status={status} statusText={statusText} />
-
-      <main className="main-content">
-        <ConfigPanel
-          backendUrl={backendUrl}
-          setBackendUrl={setBackendUrl}
-          onCheckHealth={checkHealth}
-          isLoading={isLoading}
-          autoRefresh={autoRefresh}
-          setAutoRefresh={setAutoRefresh}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-200">
+      <div>
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          user={user}
+          onLogout={handleLogout}
+          language={language}
+          setLanguage={setLanguage}
         />
 
-        <MetricsGrid metrics={metrics} />
-
-        <ResponseViewer
-          responseData={responseData}
-          httpBadge={httpBadge}
-          isSuccess={isSuccess}
+        <Dashboard
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          user={user}
+          onAuthSuccess={handleAuthSuccess}
+          language={language}
         />
+      </div>
 
-        <ArchitectureCard />
-      </main>
-
-      <footer className="footer">
-        <p>Supabase PostgreSQL React Dashboard &bull; Node.js Express Backend</p>
+      <footer className="mt-16 border-t border-emerald-500/10 bg-slate-950/90 py-8 text-center text-xs text-slate-500 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
+            <p className="font-semibold text-slate-400">
+              CivicHelper AI &bull; Intelligent Community Resource & Welfare Matcher
+            </p>
+          </div>
+          <p className="font-mono text-[11px] text-slate-500">
+            PostgreSQL Session Pooler (5432) &bull; React + Tailwind v4 &bull; Google GenAI Multilingual
+          </p>
+        </div>
       </footer>
     </div>
   );

@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const healthRoutes = require('./routes/health');
+const chatRoutes = require('./routes/chatRoutes');
+const userRoutes = require('./routes/userRoutes');
+const schemeRoutes = require('./routes/schemeRoutes');
 
 const app = express();
 
@@ -20,16 +23,22 @@ app.use((req, res, next) => {
 // Root welcome route
 app.get('/', (req, res) => {
   res.json({
-    service: 'Supabase PostgreSQL Backend Service',
+    service: 'Intelligent Community Resource Chatbot API',
     status: 'online',
     healthCheck: '/health',
-    apiHealthCheck: '/api/health',
+    chatEndpoint: '/api/chat',
+    usersEndpoint: '/api/users',
+    schemesEndpoint: '/api/schemes',
+    serviceCentersEndpoint: '/api/service-centers',
   });
 });
 
-// Mount health routes
+// Mount routes
 app.use('/health', healthRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api', schemeRoutes);
 
 // 404 handler
 app.use((req, res) => {

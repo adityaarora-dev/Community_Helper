@@ -16,12 +16,16 @@ DB_PROJECT/
 
 ## Quickstart
 
-### 1. Initialize & Seed Database (Run Once)
+### 1. Check or Initialize Database
 ```bash
 cd backend
+
+# Inspect tables, columns, rows & location:
+npm run db:check
+
+# Seed / re-initialize tables:
 npm run db:init
 ```
-* Seeds 7 government schemes, 7 eligibility rules, and 5 service centers.
 
 ### 2. Start Backend Server
 ```bash
@@ -40,9 +44,40 @@ npm run dev
 
 ---
 
-## Database Architecture
-* **`users`**: Demographic records.
-* **`govt_schemes`**: Welfare schemes & required documents.
-* **`eligibility_rules`**: Income, age, gender, occupation, family size, disability, and landholding rules.
-* **`service_centers`**: Facilitation centers by zone.
-* **`user_interactions`**: Chat logs & matched scheme IDs.
+## Demo Citizen Credentials (Ready to Test)
+Use these pre-seeded accounts to sign in via the **Citizen Sign In** modal:
+
+| Citizen Name | Email (ID) | Password | Profile Demographics |
+| :--- | :--- | :--- | :--- |
+| **Ramesh Kumar** | `citizen@example.com` | `Citizen@123` | Farmer, North Zone, Income ₹1,80,000, 3 Members, 2.0 Acres |
+| **Sunita Devi** | `vendor@example.com` | `Citizen@123` | Street Vendor, Central Zone, Income ₹1,20,000, 4 Members |
+
+*(Or click "Register" in the modal to create any new citizen account)*
+
+---
+
+## Database Location & Tables (Supabase)
+* **Location**: Host `aws-0-ap-northeast-2.pooler.supabase.com:5432` > Database `postgres` > Schema `public`
+* **Dashboard View**: [Supabase Table Editor](https://supabase.com/dashboard/project/jluaxwcdyyvmmazrhjqv/editor)
+* **Tables**:
+  * `govt_schemes`: Welfare schemes & documents.
+  * `eligibility_rules`: Income, age, gender, occupation, family size, disability, land limits.
+  * `service_centers`: Facilitation centers by zone.
+  * `users`: Citizen demographic profiles & auth credentials.
+  * `user_interactions`: Chat logs & matched scheme IDs.
+
+---
+
+## AI Architecture & Gemini API Key
+Powered by Google GenAI SDK (`@google/genai`):
+* **Key Role**: Powers unstructured language understanding, strict JSON demographic extraction, multi-turn conversational follow-up questions, and grounded benefit explanations.
+* **Deterministic Relational Guardrail**: The LLM NEVER generates SQL queries. It only extracts demographic JSON parameters, which the backend safely maps to parameterized SQL (`$1..$8`).
+* **Models**: Primary `gemini-3.5-flash` with fallback to `gemini-3.8-flash` and rule-based heuristic parser.
+
+---
+
+## Roadmap (What More to Go)
+1. Scheme bookmarking & application status tracker.
+2. Document verification & upload via Supabase Storage.
+3. Multilingual voice/text support (Hindi, regional languages).
+4. Cloud deployment (Vercel + Render).

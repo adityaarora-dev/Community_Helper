@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test-db": "node -e \"require('./src/config/db').testConnection().then(() => process.exit(0)).catch(() => process.exit(1));\"",
-    "db:init": "node src/scripts/initDb.js"
+    "db:init": "node src/scripts/initDb.js",
+    "db:check": "node src/scripts/checkDb.js"
   },
   "keywords": [
     "supabase",
@@ -19,9 +20,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^2.28.0",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^18.0.6",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.0.16",
     "pg": "^8.23.1"
   },
   "devDependencies": {
