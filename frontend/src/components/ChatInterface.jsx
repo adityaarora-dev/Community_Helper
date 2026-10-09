@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useLanguage } from '../i18n';
+import AssistantMarkdown from './AssistantMarkdown';
 
 function SqlCollapsible({ sql, executionTimeMs, rowCount, thought }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -161,7 +162,7 @@ export default function ChatInterface({ messages, onSendMessage, isLoading, onSw
         </button>
       </div>
 
-      <div className="chat-thread" ref={thread} role="log" aria-live="polite" aria-label={t('assistant')}>
+      <div className="chat-thread" ref={thread} role="log" tabIndex={0} aria-live="polite" aria-label={t('assistant')}>
         {/* Welcome Message */}
         <div className="message assistant-message">
           <span className="message-byline">CivicHelper AI • Text-to-SQL Engine</span>
@@ -206,7 +207,7 @@ export default function ChatInterface({ messages, onSendMessage, isLoading, onSw
                 </div>
               ) : (
                 <div className="message-text-content">
-                  <p>{message.content}</p>
+                  {isUser ? <p>{message.content}</p> : <AssistantMarkdown>{message.content}</AssistantMarkdown>}
                 </div>
               )}
 
