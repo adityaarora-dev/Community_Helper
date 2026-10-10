@@ -134,27 +134,27 @@ sequenceDiagram
     Express->>SchemaSvc: getSchemaContext()
     SchemaSvc-->>Express: PostgreSQL public schema DDL (cached or introspected)
     Express->>TextToSql: generateSqlFromPrompt(query, history, schemaText)
-    Note over TextToSql: Gemini analyzes intent, resolves pronouns,<br/>maps to tables/columns, generates SELECT
-    TextToSql-->>Express: JSON { intent, thought, sql, explanation }
+    Note over TextToSql: Gemini resolves intent, pronouns, and schema mappings
+    TextToSql-->>Express: JSON with intent, thought, sql, explanation
     
     alt Intent is Conversational
-        Express-->>Frontend: Return conversational response (no SQL executed)
+        Express-->>Frontend: Return conversational response (no SQL needed)
     else Intent is Database Query
         Express->>Validator: validateSql(sql)
         alt SQL Invalid or Forbidden
-            Validator-->>Express: Reject { isValid: false, error }
+            Validator-->>Express: Reject with validation error
             Express-->>Frontend: HTTP 422 SQL_VALIDATION_ERROR
-        else SQL Valid & Safe
+        else SQL Valid and Safe
             Validator-->>Express: Return sanitized SQL with LIMIT
             Express->>Executor: executeSafeQuery(sanitizedSql)
-            Executor->>Postgres: BEGIN READ ONLY; SET LOCAL statement_timeout = 5000;
-            Executor->>Postgres: Execute SELECT ...
-            Postgres-->>Executor: Raw Rows & Metadata
-            Executor->>Postgres: ROLLBACK; (Release locks immediately)
-            Executor-->>Express: { success: true, rows, rowCount, executionTimeMs }
+            Executor->>Postgres: BEGIN READ ONLY and SET statement_timeout = 5000ms
+            Executor->>Postgres: Execute SELECT query
+            Postgres-->>Executor: Raw Rows and Metadata
+            Executor->>Postgres: ROLLBACK (Release locks immediately)
+            Executor-->>Express: Success with rows and execution metrics
             Express->>TextToSql: generateGroundedAnswer(rows, language)
-            TextToSql-->>Express: Conversational grounded response in target language
-            Express->>Postgres: INSERT INTO user_interactions (...)
+            TextToSql-->>Express: Grounded conversational response
+            Express->>Postgres: INSERT INTO user_interactions (log record)
             Express-->>Frontend: Complete JSON payload with SQL, rows, metadata, and grounded reply
         end
     end
