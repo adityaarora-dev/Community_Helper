@@ -61,8 +61,10 @@ test('Comprehensive Security, Profile Authorization, Admin 30-Day Session, Rate 
     );
     createdUserIds.push(citizenAId, citizenBId);
 
-    const tokenA = jwt.sign({ userId: citizenAId }, process.env.JWT_SECRET);
-    const tokenB = jwt.sign({ userId: citizenBId }, process.env.JWT_SECRET);
+    const sessA = await db.query('INSERT INTO citizen_sessions(user_id) VALUES ($1) RETURNING session_id', [citizenAId]);
+    const sessB = await db.query('INSERT INTO citizen_sessions(user_id) VALUES ($1) RETURNING session_id', [citizenBId]);
+    const tokenA = jwt.sign({ userId: citizenAId, sessionId: sessA.rows[0].session_id }, process.env.JWT_SECRET, { audience: 'civichelper-citizen-session', algorithm: 'HS256', expiresIn: '8h' });
+    const tokenB = jwt.sign({ userId: citizenBId, sessionId: sessB.rows[0].session_id }, process.env.JWT_SECRET, { audience: 'civichelper-citizen-session', algorithm: 'HS256', expiresIn: '8h' });
 
     // =========================================================================
     // 2. STAGE 4: Profile Route Authorization & IDOR Protection

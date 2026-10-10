@@ -112,7 +112,10 @@ async function runTests() {
     console.log('6️⃣ Testing Conversational AI Assistant & Relational Matching...');
     const chatRes = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${citizenToken}`,
+      },
       body: JSON.stringify({
         query: 'I am a 32yo farmer with 2.5 acres of land in North Zone earning 80,000 per year.',
         userId,

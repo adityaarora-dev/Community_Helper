@@ -37,7 +37,8 @@ test('verified signup and durable, account-isolated zone notifications', async (
     const token = registered.data.token;
     await client.query('UPDATE users SET location_zone = $1 WHERE user_id = $2', [zone, userId]);
     const other = (await client.query('INSERT INTO users(name, location_zone) VALUES ($1, $2) RETURNING user_id', ['Other test', `${zone}-other`])).rows[0].user_id;
-    const otherToken = jwt.sign({ userId: other }, process.env.JWT_SECRET);
+    const otherSession = (await client.query('INSERT INTO citizen_sessions(user_id) VALUES ($1) RETURNING session_id', [other])).rows[0].session_id;
+    const otherToken = jwt.sign({ userId: other, sessionId: otherSession }, process.env.JWT_SECRET, { audience: 'civichelper-citizen-session', algorithm: 'HS256', expiresIn: '8h' });
     const scheme = async (suffix, location) => (await client.query(`INSERT INTO govt_schemes
       (scheme_name, description, category, total_benefit_value, location_zone)
       VALUES ($1, 'Test only', 'Education', 100, $2) RETURNING scheme_id`, [`Test-${id}-${suffix}`, location])).rows[0].scheme_id;

@@ -5,11 +5,12 @@ Express + Supabase PostgreSQL (IPv4 Session Pooler) + React dashboard for determ
 ## Structure
 ```
 DB_PROJECT/
-├── backend/    # Express server, pg pool, and DB migration
-├── frontend/   # React + Vite dashboard
-├── README.md   # Quickstart guide
-├── agent.md    # Architecture, SQL matching logic, & AI roadmap
-└── progress.md # Task execution log
+├── backend/         # Express server, pg pool, and DB migration
+├── frontend/        # React + Vite dashboard
+├── ARCHITECTURE.md  # Detailed component-wise system architecture
+├── README.md        # Quickstart guide
+├── agent.md         # Architecture, SQL matching logic, & AI roadmap
+└── progress.md      # Task execution log
 ```
 
 ---

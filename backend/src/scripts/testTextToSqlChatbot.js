@@ -12,16 +12,32 @@ async function runTestSuite() {
   const baseUrl = 'http://localhost:5998';
 
   try {
+    // Authenticate as pre-seeded demo citizen to obtain valid citizen session
+    const loginRes = await fetch(`${baseUrl}/api/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'citizen@example.com', password: 'Citizen@123' }),
+    }).then((r) => r.json());
+
+    const citizenToken = loginRes.token;
+    if (!citizenToken) throw new Error('Failed to obtain citizen session token for text-to-sql tests.');
+
+    const postChat = (body) =>
+      fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${citizenToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+
     // -------------------------------------------------------------------------
     // TEST 1: Basic natural-language database query
     // -------------------------------------------------------------------------
     console.log('Test 1: Basic natural-language database query ("Show me all schemes in Healthcare")');
-    const res1 = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'Show me all schemes in Healthcare',
-      }),
+    const res1 = await postChat({
+      query: 'Show me all schemes in Healthcare',
     });
     const data1 = await res1.json();
     console.log(`  HTTP Status: ${res1.status}`);
@@ -37,12 +53,8 @@ async function runTestSuite() {
     // TEST 2: Filtering with multiple conditions
     // -------------------------------------------------------------------------
     console.log('Test 2: Multi-condition query ("Show schemes with benefit >= 100000 in Housing or Healthcare")');
-    const res2 = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'Show schemes with benefit >= 100000 in Housing or Healthcare',
-      }),
+    const res2 = await postChat({
+      query: 'Show schemes with benefit >= 100000 in Housing or Healthcare',
     });
     const data2 = await res2.json();
     console.log(`  HTTP Status: ${res2.status}`);
@@ -57,12 +69,8 @@ async function runTestSuite() {
     // TEST 3: Sorting and aggregation
     // -------------------------------------------------------------------------
     console.log('Test 3: Aggregation ("What is the total and average benefit value of all schemes?")');
-    const res3 = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'What is the total and average benefit value of all schemes?',
-      }),
+    const res3 = await postChat({
+      query: 'What is the total and average benefit value of all schemes?',
     });
     const data3 = await res3.json();
     console.log(`  HTTP Status: ${res3.status}`);
@@ -80,13 +88,9 @@ async function runTestSuite() {
     const history = [];
 
     // Turn 1
-    const t1Res = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'Show all agricultural schemes',
-        history,
-      }),
+    const t1Res = await postChat({
+      query: 'Show all agricultural schemes',
+      history,
     });
     const t1Data = await t1Res.json();
     console.log(`  Turn 1 SQL: ${t1Data.sql}`);
@@ -94,13 +98,9 @@ async function runTestSuite() {
     history.push({ role: 'assistant', content: t1Data.conversational_reply, sql: t1Data.sql });
 
     // Turn 2
-    const t2Res = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'Now show only those with benefit greater than 5000',
-        history,
-      }),
+    const t2Res = await postChat({
+      query: 'Now show only those with benefit greater than 5000',
+      history,
     });
     const t2Data = await t2Res.json();
     console.log(`  Turn 2 SQL: ${t2Data.sql}`);
@@ -109,13 +109,9 @@ async function runTestSuite() {
     history.push({ role: 'assistant', content: t2Data.conversational_reply, sql: t2Data.sql });
 
     // Turn 3
-    const t3Res = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'How many are there?',
-        history,
-      }),
+    const t3Res = await postChat({
+      query: 'How many are there?',
+      history,
     });
     const t3Data = await t3Res.json();
     console.log(`  Turn 3 SQL: ${t3Data.sql}`);
@@ -126,12 +122,8 @@ async function runTestSuite() {
     // TEST 5: Zero Matching Records
     // -------------------------------------------------------------------------
     console.log('Test 5: Zero Matching Records ("Show schemes for astronauts with income 100 crore")');
-    const res5 = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: 'Show schemes for astronauts with income 100 crore',
-      }),
+    const res5 = await postChat({
+      query: 'Show schemes for astronauts with income 100 crore',
     });
     const data5 = await res5.json();
     console.log(`  HTTP Status: ${res5.status}`);
